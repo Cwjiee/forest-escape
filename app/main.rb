@@ -28,12 +28,13 @@ def spawn_character(args)
     args.state.runner ||= {
         x: (args.grid.w * 1)/5,
         y: GROUND,
-        w: 110,
-        h: 110,
+        w: 90,
+        h: 90,
         jump: 0,
         running: true,
         jumping: false,
         attacking: false,
+        idle: false,
         source_x: 10,
         source_y: 1,
         source_w: 28 ,
@@ -72,11 +73,10 @@ def enemy_physics(args)
             args.state.enemies << spawn_enemy(args)
         end
 
-        if args.geometry.intersect_rect?(enemy, args.state.runner)
-            # game_over_tick(args)
-            # return
-            enemy.dead = true 
-            args.state.enemies << spawn_enemy(args)
+        if !args.state.runner.attacking
+            if args.geometry.intersect_rect?(enemy, args.state.runner)
+                args.state.game_end = true
+            end
         end
 
         enemy.x += SPEED
@@ -120,6 +120,7 @@ def attack_physics(args)
         args.state.enemies.each do |enemy|
             if args.geometry.intersect_rect?(args.state.runner, enemy)
                 enemy.dead = true 
+                args.state.score += 1
                 args.state.enemies << spawn_enemy(args)
             end
         end
@@ -132,24 +133,33 @@ def attack_physics(args)
     end
 end
 
-def game_over_tick args
-    timer += 1
+
+def game_over_tick(args)
+
     labels = []
     labels << {
         x: args.grid.w/2,
         y: args.grid.h/2,
+        z: 20,
         text: "Game Over",
         size_enum: 20,
     }
+    labels << {
+        x: args.grid.w/2,
+        y: args.grid.h/2 - 50,
+        z: 20,
+        text: "Final score: #{(args.state.timer.seconds/FPS).round + (args.state.score/48).round}",
+        size_enum: 15,
+    }
 
     args.outputs.labels << labels
-    
-    if timer > 30 && args.inputs.keyboard.key_down.space
+        
+    if args.state.timer.game_over > 30 && args.inputs.keyboard.key_down.space
         $gtk.reset
     end
 end
 
-def calc_time args
+def calc_time(args)
     args.state.timer.seconds += 1
 
     if args.state.timer.seconds > (60 * FPS)
@@ -185,6 +195,13 @@ end
 def tick args
     spawn_character(args)
     args.state.score ||= 0
+    args.state.game_end ||= false
+
+    if args.state.game_end == true
+        args.state.timer.game_over += 1
+        game_over_tick(args)
+        return
+    end
 
     args.state.backgrounds ||= [
         spawn_background(args, '11'),
@@ -203,6 +220,7 @@ def tick args
             y: 0,
             w: 1280,
             h: 1450,
+            idle: false,
             path: 'sprites/forest/background/Layer_0000.png',
         }
     ]
@@ -224,6 +242,7 @@ def tick args
             y: 0,
             w: 1280,
             h: 1450,
+            idle: false,
             path: 'sprites/forest/background/Layer_0000.png',
         }
     ]
@@ -242,29 +261,24 @@ def tick args
         minutes: 0,
         seconds: 0,
         game_tick: 0,
+        game_over: 0,
     }
 
     # implement all physics
     calc(args)
 
-    # #coordinates debugging
-    # if args.inputs.mouse.click
-    #     puts " coordinates is #{args.inputs.mouse.x} , #{args.inputs.mouse.y}"
-    # end
-
     # render sprites
     args.outputs.sprites << [args.state.backgrounds, args.state.backgrounds2, args.state.runner, args.state.enemies]
 
-    
-    labels = []
-    labels << {
+    args.state.board = []
+    args.state.board << {
         x: 30,
         y: args.grid.h - 20,
-        text: "Time: #{(args.state.timer.minutes/FPS).round}m #{(args.state.timer.seconds/FPS).round}s",
+        text: "Score: #{(args.state.timer.seconds/FPS).round + (args.state.score/48).round}",
         size_enum: 8,
     }
    
-    args.outputs.labels << labels
+    args.outputs.labels << [args.state.board, args.state.hitscore]
 end
 
 $gtk.reset
