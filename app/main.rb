@@ -143,6 +143,9 @@ def game_over_tick(args)
         z: 20,
         text: "Game Over",
         size_enum: 20,
+        r: 233,
+        g: 218,
+        b: 0,
     }
     labels << {
         x: args.grid.w/2,
@@ -150,6 +153,9 @@ def game_over_tick(args)
         z: 20,
         text: "Final score: #{(args.state.timer.seconds/FPS).round + (args.state.score/48).round}",
         size_enum: 15,
+        r: 233,
+        g: 218,
+        b: 0,
     }
 
     args.outputs.labels << labels
