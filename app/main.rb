@@ -1,14 +1,24 @@
-GROUND = 180
+GROUND = 123
 JUMP_VELO = 22
 GRAVITY = -0.98
 FPS = 60
 
-def spawn_character args
+def spawn_background(args, num)
+    {
+        x: 0,
+        y: 66,
+        w: 1280,
+        h: 720,
+        path: "sprites/forest/background/Layer_00#{num}.png",
+    }
+end
+
+def spawn_character(args)
     args.state.runner ||= {
         x: (args.grid.w * 1)/5,
         y: GROUND,
-        w: 120,
-        h: 120,
+        w: 110,
+        h: 110,
         jump: 0,
         jumping: false,
         source_x: 10,
@@ -27,10 +37,10 @@ def spawn_character args
     
 end
 
-def spawn_enemy (args)
+def spawn_enemy(args)
     {
         x: args.grid.w + 10,
-        y: GROUND - 4,
+        y: GROUND - 3,
         w: 80,
         h: 80,
         flip_horizontally: true,
@@ -39,7 +49,7 @@ def spawn_enemy (args)
     }
 end
 
-def enemy_physics args
+def enemy_physics(args)
     args.state.enemies.each do |enemy|
         if enemy.x < -enemy.w 
             enemy.dead = true
@@ -61,7 +71,7 @@ def enemy_physics args
     args.state.enemies.reject! {|e| e.dead }
 end
 
-def jump_physics args
+def jump_physics(args)
     # checks input for jumping
     if args.inputs.keyboard.key_down.space && args.state.runner.y == GROUND 
         args.state.runner.jumping = true
@@ -118,13 +128,27 @@ end
 def tick args
     spawn_character(args)
     args.state.score ||= 0
-    args.state.ground ||= {
-        x: 0,
-        y: 0,
-        w: 1280,
-        h: GROUND,
-        path: 'sprites/tile/wall-1000.png'
-    }
+
+    args.state.background ||= [
+        spawn_background(args, '11'),
+        spawn_background(args, '10'),
+        spawn_background(args, '09'),
+        spawn_background(args, '08'),
+        spawn_background(args, '07'),
+        spawn_background(args, '06'),
+        spawn_background(args, '05'),
+        spawn_background(args, '04'),
+        spawn_background(args, '03'),
+        spawn_background(args, '02'),
+        spawn_background(args, '01'),
+        {
+            x: 0,
+            y: 0,
+            w: 1280,
+            h: 1450,
+            path: 'sprites/forest/background/Layer_0000.png',
+        }
+    ]
 
     args.state.enemies ||= [
         spawn_enemy(args)
@@ -144,8 +168,13 @@ def tick args
     # implement all physics
     calc(args)
 
+    # #coordinates debugging
+    # if args.inputs.mouse.click
+    #     puts " coordinates is #{args.inputs.mouse.x} , #{args.inputs.mouse.y}"
+    # end
+
     # render sprites
-    args.outputs.sprites << [args.state.ground, args.state.runner, args.state.enemies]
+    args.outputs.sprites << [args.state.background, args.state.runner, args.state.enemies]
 
     
     labels = []
